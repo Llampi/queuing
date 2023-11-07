@@ -1,0 +1,510 @@
+{{ block title }}<title>Your Decision</title>{{ endblock }}
+
+
+{{ block content }}
+
+<head>
+    
+    <style type="text/css">
+        .outer{
+            border: 1px solid rgb(12, 12, 12);
+            border-bottom: 1px solid rgb(5, 5, 5);
+            display:flex;
+            justify-content: center;
+            padding: 3px;
+          }
+           
+          .outer > div {
+            border: 0px solid #000;
+
+            margin:5px;
+            padding: 15px 15px 15px 15px;
+          }
+        .vertical_hr {
+            border:         none;
+            border-left:    5px solid rgb(100,100,100,100);
+            height:         100vh;
+            width:          1px; 
+        }
+        .square
+        {   background: #000000;
+            height: 50px;
+            width: 50px;
+        }
+    </style>
+</head>
+    
+        
+        
+
+   
+    
+    <div class="outer">
+        <div style="width:100%;border-right:1px solid;">
+            <h1>Your Decision</h1><br>
+            Round number: <strong> {{player.subsession.round_number}} </strong> <br>
+            Swap method: <strong> {{player.swap_method}} </strong><br>
+            Messaging: <strong> {{player.messaging_boolean}} </strong><br>
+            Practice: <strong>{{player.practice}}</strong><br>
+            {{ if player.swap_method == 'token' }}
+                Your endowment: <strong> {{player.endow_token}}  </strong> tokens<br>
+            {{ elif player.swap_method == 'trade' }}
+                Your endowment: <strong> {{player.endow}} </strong><br>
+            {{ endif }}
+            Your current position:  <strong id="position">{{player.id_in_group}}</strong><br>
+            Total transfer: <strong id="total_transfer"> {{player.total_transfer}} </strong><br>
+            Total payoff if stays in the current position: <strong> {{player.payoff}} </strong><br> 
+        </div>
+        
+        <div style="width:100%;">
+        <canvas id="my_canvas" style="width:100%;"></canvas>
+        
+        </div>
+    </div>
+    <br>
+    
+    <div class = "outer">
+        <div style="width:100%;border-right:1px solid;">
+            <div style="border-bottom:1px solid;padding-bottom:15px;margin-bottom:5px"><h5>Requests decisions</h5></div>
+            <div style="display:flex;justify-content: center;">
+                <div style="width: 100%;">
+                    {{ formfields }}
+                
+                    <button style="" id ="send_button" type="button" onclick="sendOffer()">Send</button>
+                    <button style="" id ="cancel_button" type="button" onclick="cancelOffer()">Cancel</button>
+                </div>
+            </div>
+            
+        </div>
+        <div style="width:100%;">
+            <div style="border-bottom:1px solid;padding-bottom:15px;margin-bottom:5px"><h5>Request history</h5></div>
+            <div class="acept_reject_history">
+                <div id="history_of_requests"></div>
+                <div id="history_of_received_requests"></div>
+                <table class= "table" cellspacing="0" cellpadding="0" id="history_of_petitions" > 
+                    
+                </table>
+            </div>
+        </div>
+        
+
+        
+        
+    </div>
+
+    <!--
+    <br>
+    <div class = "outer">
+        <div style="width:100%;border-right:1px solid;">
+            <div style="border-bottom:1px solid;padding-bottom:15px;margin-bottom:5px"><h5>History of your requests</h5></div>
+            
+            
+            
+        </div>
+        <div style="width:100%;">
+            <div style="border-bottom:1px solid;padding-bottom:15px;"><h5>History of received requests</h5></div>
+            
+        </div>
+    </div>
+    -->
+    <br>
+    <div class="outer">
+        <div style="width: 100%;">
+
+        </div>
+        <div style="width:100%;">
+            <div style="border-bottom:1px solid;padding-bottom:15px;margin-bottom:5px"><h5>Current requests received </h5></div>
+            <div class="acept_reject_history">
+                <table class= "table" cellspacing="0" cellpadding="0" id="acept_reject_history" > 
+                    
+                </table>
+            </div>
+        </div>
+    </div>
+    <br>
+    
+    
+    <table class= "table" cellspacing="0" cellpadding="0" id="history" > 
+        <tr>
+            
+          <th></th>
+        </tr>
+    </table>
+    <!-- 
+    <input type="button" onclick="save_history()" value="click me for save history">
+    -->
+<script>
+    
+    ///
+
+    document.getElementById("cancel_button").disabled=true;
+
+
+    let history = document.getElementById('history');
+    let acept_reject_history = document.getElementById('acept_reject_history');
+    let history_of_received_requests = document.getElementById('history_of_received_requests');
+    let history_of_requests = document.getElementById('history_of_requests');
+    let last_petition_to = 0;
+    let offer_with_money = document.getElementById('id_offer');
+    let offer_with_message = document.getElementById('id_message');
+    var diccionario_data = ""
+    function liveRecv(data) {
+            console.log(data)
+            diccionario_data = data
+            if (data.type == 'offer'){
+                if('{{player.swap_method}}'=='token' ) { token_offer_message = " <br> Token offer: " + data.token_offer_message; points_offer_message = "" }
+                else if('{{player.swap_method}}'=='trade' ){token_offer_message = '' ; points_offer_message = " <br> Points offer: " + data.points_offer}
+                
+                if('{{player.messaging_boolean}}'=='True' ) {offer_message = "<br> Message : " +  data.message_to_send}
+                else{offer_message = ""}
+
+                console.log("oferta recibida de :", data.fromm);
+                acept_reject_history.innerHTML +="<tr><th><h6>The user in position " +data.fromm + " requests a change of positions" + points_offer_message + token_offer_message +  offer_message + " </h6> </th>"+
+                                    "<th><button class ='disableable accept_offer pendant_yes " + data.fromm +"' type='button' onclick='aceptRequest()'>Accept</button></th>"+
+                                    "<th><button class ='disableable reject_offer pendant_yes " + data.fromm +"' type='button' onclick='rejectRequest("+data.fromm+")'>Reject</button></th></tr>";
+                
+                
+                
+
+                history_of_received_requests.innerHTML =  "<br> <span style='color: red;'> The user in position " +data.fromm + " sent you a request. <span >"  + history_of_received_requests.innerHTML
+                                }
+            /// respuesta positiva
+            else if(data.type == 'response')
+            
+            {
+                console.log("disabled")
+                document.getElementById("send_button").disabled = false;
+                document.getElementById("cancel_button").disabled = true;
+                if(data.value)
+                {   
+                    history_of_requests.innerHTML ="<br><span style='color: blue;'>The user with position "+ data.fromm +" accepted your offer and positions were changed </span>" +history_of_requests.innerHTML
+                    update_choices(data.fromm);
+                    console.log("El usuario con id ", data.fromm,"  acepto tu oferta. Player id in group: ",{{player.id_in_group}});
+                    update_position(data.fromm)
+                    console.log(data)
+                    console.log("swap method for update_transfer: "+'{{player.swap_method}}')
+                    if ('{{player.swap_method}}' == 'token'){update_total_transfer(-data.token_offer_message);}
+                    else if ('{{player.swap_method}}' == 'trade'){update_total_transfer(-data.points_offer)}
+                    
+                    startGame(data.fromm);
+                    save_history();
+                    update_payoff()
+                    
+                    reload_page()
+                    
+                }
+                else 
+                {   
+                    history_of_requests.innerHTML ="<br><span style='color: blue;'>The user in position "+ data.fromm +" rejected your offer. <span>"+history_of_requests.innerHTML
+                    console.log("El usuario con id ", data.fromm,"  rechazo tu oferta");
+                }
+            }     
+            else if (data.type == 'update_message')
+            {   
+
+                
+                if (data.value == 'acept')
+                {
+                    history_of_received_requests.innerHTML ="<br><span style='color: red;'>You accepted an offer and changed positions with "+data.fromm+history_of_received_requests.innerHTML +"</span>";
+                    let act = document.getElementById('position').innerHTML = data.fromm;
+                    update_choices(data.fromm)
+                    startGame(data.fromm);
+                    
+                }
+                else if (data.value == 'reject')
+                {
+                    history_of_received_requests.innerHTML ="<br><span style='color: red;'>You rejected an offer from the user with position "+data.to + "</span>" + history_of_received_requests.innerHTML
+                //let act = document.getElementById('position').innerHTML = data.to;
+                }
+                save_history()
+            }   
+            else if (data.type == 'cancel')
+            {
+                //alert("El usuario de posicion " + data.fromm + " quiere cancelar una peticion")
+                cancelRequest(data.fromm);
+                history_of_received_requests.innerHTML = "<br><span style='color: red;'>The user of position " +data.fromm+ " canceled his request <span>" + history_of_received_requests.innerHTML;
+                
+            }
+        }
+
+    function sendOffer() {
+        let objetive = document.getElementById('id_desired_position').value;
+        //let text = "If you send an offer, automatically reject the offers that were made to you.";
+        //if (objetive)
+        
+        if (parseInt(objetive) > 0)
+        {
+            //if (confirm(text) == true) {
+                let send_button = document.getElementById("send_button");
+
+                reject_all();
+                if ('{{player.swap_method}}'== 'trade'){token_offer = 0; points_offer = document.getElementById('id_offer').value;}
+                else if ('{{player.swap_method}}'== 'token') {token_offer = document.getElementById('id_token').value; points_offer = 0}
+                if ('{{player.messaging_boolean}}'== 'True'){message_to_send = document.getElementById('id_message').value}
+                else {message_to_send = ''}
+                last_petition_to = parseInt(objetive)
+                liveSend({'type': 'offer', 'value': 0, 'to': parseInt(objetive), 'fromm':parseInt(document.getElementById("position").innerHTML), 'message_to_send': message_to_send,'token_offer_message': token_offer, 'points_offer': points_offer})
+                console.log("posicion pedida: ",objetive, ". De usuario con id:  ",{{player.id_in_group}});
+                
+                history_of_requests.innerHTML ='<br><span style="color: blue;">You sent an offer to the user of position ' + objetive + '</span>' + history_of_requests.innerHTML;
+                send_button.disabled = true;
+                document.getElementById("cancel_button").disabled = false
+            //} 
+            //else{}
+        }
+        else{alert("Choose a valid option")}
+    }
+    function cancelOffer()
+    {
+        history_of_requests.innerHTML = "<br><span style='color: blue;'>You have canceled your request to user " +last_petition_to+" </span> "+history_of_requests.innerHTML
+        //alert("You canceled a request made to the user of position "+last_petition_to);
+        liveSend({'type': 'cancel', 'value': 0, 'to': last_petition_to, 'fromm':parseInt(document.getElementById("position").innerHTML)})
+        document.getElementById("cancel_button").disabled = true;
+        document.getElementById("send_button").disabled = false
+    }
+
+    function aceptRequest(){
+        data = diccionario_data
+
+
+        
+        //console.log(aceptar_data)
+        if ( '{{player.swap_method}}' == 'trade'){points_offer = data.points_offer; token_offer = 0}
+        else if ('{{player.swap_method}}' == 'swap') { points_offer = 0; token_offer = 0}
+        else if ('{{player.swap_method}}' == 'token') { points_offer = 0; token_offer = data.token_offer_message}
+        if('{{player.messaging_boolean}}' == 'TRUE') {message_to_send = data.message_to_send}
+        else {message_to_send = ''}
+        emisor = data.fromm
+        let nodeList = document.querySelectorAll(".disableable");
+        for (let i = 0; i < nodeList.length; i++) {
+            let class_name = String(nodeList[i].className)
+            if (class_name.includes(String(emisor)) && class_name.includes("pendant_yes"))
+            {
+                nodeList[i].parentElement.parentElement.style.display = "none";
+                nodeList[i].disabled = true;
+                class_name_2 = class_name.replace("pendant_yes","pendant_no");
+                nodeList[i].className = class_name_2
+            }
+            else if(class_name.includes("pendant_yes")&&class_name.includes("reject_offer"))
+            {   
+                let number = class_name.match(/\d+/)[0];
+                rejectRequest(number);
+                
+            }
+        }
+        for (let i = 0; i < nodeList.length; i++) {
+            nodeList[i].disabled = true;
+        }
+        liveSend({'type': 'response', 'value': true, 'to': parseInt(emisor), 'fromm':parseInt(document.getElementById('position').innerHTML), 'swap_method' : '{{player.swap_method}}','points_offer': points_offer, 'message_to_send': message_to_send, 'token_offer_message' : token_offer})
+        console.log("Acepaste la oferta del usuario con posicion: ",emisor)
+        
+        if ('{{player.swap_method}}' == 'token'){update_total_transfer(-data.token_offer_message);}
+        else if ('{{player.swap_method}}' == 'trade'){update_total_transfer(-data.points_offer)}
+        save_history()
+        //update_history()
+        update_payoff()
+        reload_page()
+
+    }
+    function rejectRequest(emisor){
+        let nodeList = document.querySelectorAll(".disableable");
+        
+        for (let i = 0; i < nodeList.length; i++) {
+            //alert("se evaluara la oferta de "+emisor + " con clase: "+ nodeList[i].className)
+            let class_name = String(nodeList[i].className)
+            if (class_name.includes("pendant_yes") && class_name.includes(String(emisor)))
+            {
+                nodeList[i].parentElement.parentElement.style.display = "none";
+                nodeList[i].disabled = true;
+                class_name = class_name.replace("pendant_yes","pendant_no");
+                nodeList[i].className = class_name
+                
+                //alert("se desactivo oferta de "+emisor + " clase: "+ nodeList[i].className);
+            }
+            else
+            {//alert("NO se desactivo oferta de "+emisor + " clase: "+ nodeList[i].className);
+            }
+        }
+        liveSend({'type': 'response', 'value': false, 'to': parseInt(emisor), 'fromm':parseInt(document.getElementById('position').innerHTML)});
+        console.log("Rechazaste la oferta del usuario con posicion: ",emisor)
+
+    }
+    function cancelRequest(emisor){
+        let nodeList = document.querySelectorAll(".disableable");
+        
+        for (let i = 0; i < nodeList.length; i++) {
+            //alert("se evaluara la oferta de "+emisor + " con clase: "+ nodeList[i].className)
+            let class_name = String(nodeList[i].className)
+            if (class_name.includes("pendant_yes") && class_name.includes(String(emisor)))
+            {
+                nodeList[i].parentElement.parentElement.style.display = "none";
+                nodeList[i].disabled = true;
+                class_name = class_name.replace("pendant_yes","pendant_no");
+                nodeList[i].className = class_name
+                
+                //alert("se desactivo oferta de "+emisor + " clase: "+ nodeList[i].className);
+            }
+            else
+            {//alert("NO se desactivo oferta de "+emisor + " clase: "+ nodeList[i].className);
+            }
+        }
+        
+
+    }
+    
+    function reject_all()
+    {
+        let nodeList = document.querySelectorAll(".disableable");
+        for (let i = 0; i < nodeList.length; i++) 
+        {
+            let class_name = String(nodeList[i].className);
+            let number = class_name.match(/\d+/)[0];
+            if (class_name.includes("pendant_yes") && class_name.includes("reject_offer"))
+            {
+                rejectRequest(number);
+            }
+        }   
+    }
+    function update_choices(number)
+                {
+                    let str = ""
+                    let options = [];
+                    for (var i = 1; i < number; i++)
+                    {
+                    	options.push(i);
+                    }
+                    for (var option of options) {
+                    str += "<option value = "+ option + ">"+ option + "</option>"
+                    }
+                //alert(str)
+                document.getElementById("id_desired_position").innerHTML = str;
+                }
+    //cuerpos
+    var squares = [];
+    //cabezas
+    var squares2 = [];
+    // texto
+    var bottom_text = [];
+    var ctx,ctx2;
+    //dibujar a los participantes
+    startGame({{player.id_in_group}});
+    
+    function startGame(actual_position) {
+        
+        let num_players = {{player.subsession.get_group_matrix()}}[0].length;
+        
+        ctx = document.getElementById("my_canvas").getContext("2d");
+        for (i = 0 ; i < num_players ; i ++)
+        {   if (actual_position == (i+1))
+            {
+                ctx.arc(100, 75, 50, 0, 2 * Math.PI);
+                squares2.push(drawStuff(15, 15, "red", 7+(num_players -1 - i)*40, 20));
+                squares.push(drawStuff(30, 50, "red", (num_players -1 - i )*40, 40));
+                
+                //bottom_text.push(drawStufftext("texto de prueba", (i+1)*40, 0, "black"));
+            }
+            else
+            {
+                squares2.push(drawStuff(15, 15, "green", 7+(num_players -1 - i)*40, 20));
+                squares.push(drawStuff(30, 50, "green", (num_players -1 - i)*40, 40));
+            }
+            
+        }
+
+        //rectangulo marron
+        squares.push(drawStuff(30, 80, "brown", (num_players)*40, 10));
+        
+        //dibujar cuerpos rectangulares
+        for ( i=0;i<squares.length;i++){
+
+            ctx.fillStyle = squares[i].color;
+            
+            ctx.fillRect(squares[i].left,squares[i].top,squares[i].width,squares[i].height);
+        }
+        // dibujar cabezas
+        for ( i=0;i<squares2.length;i++){
+
+            ctx.fillStyle = squares2[i].color;
+            
+            ctx.fillRect(squares2[i].left,squares2[i].top,squares2[i].width,squares2[i].height);
+            ctx.fillText(i+1, (num_players -1 - i)*40+15, 120);
+        }
+    }
+    function drawStufftext(text, x, y, color) {
+        context.fillStyle = color;
+        context.font = "16px Arial"; // Puedes ajustar el tamaño y la fuente según tus preferencias
+        context.fillText(text, x, y);
+    }
+    function drawStuff(width, height, color, x, y) {
+        var shape={};
+        shape.left = x;
+        shape.top = y;
+        shape.width = width;
+        shape.height = height;
+        shape.color = color;
+        return shape;
+    }
+
+    function update_position(new_position)
+    {
+        let act = document.getElementById('position').innerHTML = new_position; 
+    }
+    function update_total_transfer(value)
+    {   
+        console.log("tokken offer: " + value)
+        liveSend({'type': 'update_total_transfer', 'value': value})
+        let act = document.getElementById('total_transfer').innerHTML = {{player.total_transfer}}; 
+        
+    }
+    function update_payoff()
+    {
+        liveSend({'type': 'update_payoff'})
+    }
+    function update_history()
+    {
+        send_request = document.getElementById("history_of_requests")
+        send_request.innerHTML = '{{player.history_of_send_request}}'
+        received_request = document.getElementById("history_of_received_requests")
+        received_request.innerHTML = '{{player.history_of_received_request}}'
+    }
+    function save_history()
+    {   
+        send_request = document.getElementById("history_of_requests")
+        received_request = document.getElementById("history_of_received_requests")
+
+        liveSend({'type': 'save_history', 'send_request': send_request.innerHTML, 'received_request' : received_request.innerHTML})
+
+        //console.log(send_request.textContent) 
+        //console.log(received_request.textContent) 
+    }
+    
+    //console.log({{player.history_of_send_request}} + "hh")
+    update_history()
+    function reload_page()
+    {
+        setTimeout(function() {
+            location.reload();
+        }, 1000);
+    }
+    //funcion para guardar el historial antes de recargar la pagina
+    /*
+    window.addEventListener("beforeunload", function (event) {
+        // Aquí puedes llamar a la función que deseas antes de la recarga de la página.
+        // Por ejemplo, puedes mostrar un mensaje de confirmación al usuario.
+        // Si no deseas mostrar un mensaje, simplemente ejecuta tu función aquí.
+
+        // Ejemplo: Mostrar un mensaje de confirmación
+        event.preventDefault(); // Muestra el mensaje de confirmación del navegador
+        //event.returnValue = ""; // Algunos navegadores requieren esta línea para mostrar el mensaje
+
+        // Llama a tu función aquí
+        update_history();
+    });
+    */
+</script>
+
+    
+
+    
+{{ next_button }}
+{{ endblock }}

@@ -1,0 +1,14 @@
+{{ block title }}Results{{ endblock }}
+{{ block content }}
+    <p>Your initial position is:  <strong>  {{player.initial_position}} </strong>.</p>   
+    <p>Your final position is:  <strong>  {{player.id_in_group}} </strong>.</p>
+    <p>Round payoff: {{player.payoff}} </p>
+    <p>Total transfer: {{player.total_transfer}} </p>
+    <p>history of your request: {{player.history_of_send_request}}  </p>
+    <p>history of received request: {{player.history_of_received_request}}  </p>
+    {{ formfields }}
+
+    {{ next_button }}
+
+
+{{ endblock }}
