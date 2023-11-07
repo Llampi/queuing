@@ -10,7 +10,7 @@ RUN python3.10 --version
 RUN apt-get update && apt-get install -y python3-pip
 
 RUN python3 -m pip install -U otree
-
+RUN python3 -m pip install pandas
 
 
 # Instalar las dependencias del proyecto
