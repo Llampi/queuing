@@ -12,7 +12,15 @@ USE_POINTS = True
 DEMO_PAGE_INTRO_HTML = ''
 PARTICIPANT_FIELDS = []
 SESSION_FIELDS = []
-ROOMS = []
+
+ROOMS = [
+    dict(
+        name='session_room',
+        display_name='Session Room',
+        participant_label_file='_rooms/participant_label.txt',
+        # use_secure_urls=True
+    ),
+]
 
 ADMIN_USERNAME = 'admin'
 # for security, best to set admin password in an environment variable
@@ -22,5 +30,3 @@ SECRET_KEY = 'blahblah'
 
 # if an app is included in SESSION_CONFIGS, you don't need to list it here
 INSTALLED_APPS = ['otree']
-
-

@@ -17,12 +17,12 @@ max_players_per_group = int(datos_csv['players_per_group'].max())
 print("El valor máximo de 'players_per_group' es:", max_players_per_group)
 request_and_exchangue_data = []
 '''
-request_and_exchangue_data_element = 
+request_and_exchangue_data_element =
 {
 	"requester" : {"participant_code":"participant_code" , "player_id": "player_id", "position": "position", "offer":"offer", "message":"message"}
 	"responder" : {"participant_code":"participant_code" , "player_id": "player_id", "position": "position"}
 	"exchangue_status" : {"timestamp":"timestamp", "exchange_unique_id":"exchange_unique_id", "exchange_result":"exchange_result" (cancel, reject, accept)}
-	"session_code" :"session_code"  
+	"session_code" :"session_code"
 	"id_in_subsession" : "id_in_subsession"
 
 }
@@ -70,20 +70,20 @@ def creating_session(self):
             player.history_of_send_request = history_of_send_request
             player.history_of_received_request = history_of_received_request
             initial_position = initial_position
-    
+
     print("session actual: ", self.round_number)
     print("Messaging", messaging_boolean)
     print("swap method", swap_method)
 
-    
+
 
 class Subsession(BaseSubsession):
-    
+
     pass
 
 class Group(BaseGroup):
     ##kept = models.CurrencyField(min = 0, max = C.ENDOWMENT,label = 'La cantidad de dinero a quedarse',)
-    pass 
+    pass
 
 class Player(BasePlayer):
     swap_method = models.CharField(label='Swap Method',)
@@ -123,7 +123,7 @@ def token_choices(player):
 
 def my_dict(subsession):
     return dict(a=[1,2], b=[3,4])
-    
+
 def set_id(group):
     for p in group.get_players():
         p.payoff = 100
@@ -142,11 +142,11 @@ class WelcomePage(Page):
     @staticmethod
     def is_displayed(player):
         print("round number: ", player.round_number)
-        
+
         return player.round_number == 1
     pass
 
-class WaitPage1(WaitPage):
+class WaitPage(WaitPage):
 
     wait_for_all_groups = True
 
@@ -173,19 +173,19 @@ class InstructionPage(Page):
     @staticmethod
     def is_displayed(player):
         print("round number: ", player.round_number)
-        
+
         return player.round_number == 1
     pass
-   
+
 
 class DecisionPage(Page):
 
     @staticmethod
     def is_displayed(player):
-        
-        
+
+
         return 1
-    
+
     form_model = 'player'
     def get_form_fields(self):
         if (self.messaging_boolean and self.swap_method == 'trade'):
@@ -210,7 +210,7 @@ class DecisionPage(Page):
     @staticmethod
     def live_method(player, data_sent):
         if (data_sent['type'] == 'offer'):
-            
+
             group = player.group
             fromm = player.id_in_group
             message_to_send = data_sent['message_to_send']
@@ -223,7 +223,7 @@ class DecisionPage(Page):
             print("Usuario de posicion ",fromm," envio una oferta a usuario de posicion:", to)
             print("La matriz es: ",player.subsession.get_group_matrix())
             return {to: response}
-        
+
         #cuando responden al que envia la peticion afirmativamente
         elif ( data_sent['type'] == "response"):
             # Si el intercambio se acepto
@@ -235,18 +235,18 @@ class DecisionPage(Page):
                 pos_user1 = data_sent['to']-1  ## remitente
                 pos_user2 = data_sent['fromm']-1 ##emisor
                 print("matriz de grupos: ",group_matrix)
-                
+
                 aux = group_matrix[0][pos_user1]
                 group_matrix[0][pos_user1] = group_matrix[0][pos_user2]
                 group_matrix[0][pos_user2] = aux
-                
+
                 #aux = group_matrix[player.round_number-1][pos_user1]
                 #group_matrix[player.round_number-1][pos_user1] = group_matrix[player.round_number-1][pos_user2]
                 #group_matrix[player.round_number-1][pos_user2] = aux
 
 
                 print("Matriz de posiciones despues de aceptar: ",group_matrix)
-                
+
                 player.subsession.set_group_matrix(group_matrix)
 
                 print("player.id_in_group: ",player.id_in_group)
@@ -258,15 +258,15 @@ class DecisionPage(Page):
                     print("swap_method _ swap", player.endow , data_sent['points_offer'])
                 if(data_sent['swap_method'] == 'token'):
                     print("swap_method _ token", player.endow , data_sent['token_offer_message'])
-                    
 
-                
+
+
                 print("recibir datos")
                 response = dict(type = 'response',value = True, to=data_sent['to'], fromm = data_sent['fromm'], message_to_send = data_sent['message_to_send'], token_offer_message = data_sent['token_offer_message'], points_offer = data_sent['points_offer'] )
                 print("enviar datos")
                 #Enviar mensaje a los 2 usuarios involucrados
                 return {data_sent['fromm']: response,data_sent['to']:dict(type='update_message',value='acept',to=data_sent['fromm'], fromm = data_sent['to'])}
-            
+
             # Si el intercambio se rechaza
             elif (data_sent['value'] == False):
                 response = dict(type = 'response',value = False, to=data_sent['to'], fromm = data_sent['fromm'])
@@ -276,14 +276,14 @@ class DecisionPage(Page):
         elif(data_sent['type'] == 'cancel'):
             print("Se envio una cancelacion al usuario de posicion ",data_sent['to'], " desde la posicion ",data_sent['fromm']  )
             return {data_sent['to']: dict(type = 'cancel', value = 0,to = data_sent['to'],fromm = data_sent['fromm'])}
-        
+
         elif ( data_sent['type'] == "save_history"):
             player.history_of_send_request = data_sent['send_request']
             player.history_of_received_request = data_sent['received_request']
             print("Guardar historial: ",player.id_in_group, player.history_of_received_request)
 
         elif( data_sent['type'] == 'update_total_transfer' ):
-            #actualizar la trasferencia total        
+            #actualizar la trasferencia total
             player.total_transfer = player.total_transfer + float(data_sent['value'])
             print("total_fransfer: ", player.total_transfer)
             print("player payoff(in total transfer): ", player.payoff )
@@ -294,7 +294,7 @@ class DecisionPage(Page):
             if(player.swap_method == "trade"):
                 player.payoff = player.endow - player.total_transfer
                 print("player payoff points: ", player.payoff )
-        
+
     pass
 class ResultPage(Page):
     pass
@@ -311,7 +311,7 @@ class ResultPage(Page):
 
 import json
 class FinalPage(Page):
-    
+
     @staticmethod
     def is_displayed(player):
         #if (player.round_number == max_round):
@@ -322,8 +322,8 @@ class FinalPage(Page):
             #    json.dump(request_and_exchangue_data, archivo_json)
 
             #print(f"Los datos se han guardado en {nombre_archivo}")
-        
+
         return player.round_number == max_round
     pass
-    
-page_sequence = [WelcomePage, InstructionPage, WaitPage1, DecisionPage, ResultPage, FinalPage]
+
+page_sequence = [WelcomePage, InstructionPage, WaitPage, DecisionPage, ResultPage, FinalPage]
